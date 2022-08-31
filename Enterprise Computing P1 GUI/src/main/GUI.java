@@ -32,7 +32,7 @@ import javax.swing.JFormattedTextField;
 import javax.swing.JPanel;
 
 public class GUI {
-//test
+
 	private JFrame frame;
 	private JTextField textField;
 	private JTextField textField_1;
@@ -62,7 +62,6 @@ public class GUI {
 	private double taxRate = 6;
 	private String [] itemHolder = new String [4];
 	private String [] cart = new String [100];
-	StringBuilder currentCart = new StringBuilder();
 	StringBuilder finalInvoice = new StringBuilder();
 	DateFormat dateFormat = new SimpleDateFormat("dd/MM/yy, hh:mm:ss a z");
 	Date date = new Date();
@@ -203,6 +202,7 @@ public class GUI {
 	}
 	
 	public String viewOrder() {
+		StringBuilder currentCart = new StringBuilder();
 		for(int i = 1; i < itemCounter; i++) {
 			currentCart.append((cart[i] + "\n"));
 		}
@@ -214,12 +214,18 @@ public class GUI {
 		finalInvoice.append("Number of line items: " + (itemCounter - 1) + "\n\n");
 		finalInvoice.append("Item# / ID / Title / Price / Qty / Disc % / Subtotal:\n\n");
 		finalInvoice.append(viewOrder() + "\n");
-		finalInvoice.append("Order subtotal: " + orderSubtotal + "\n\n");
+		finalInvoice.append("Order subtotal: $" + orderSubtotal + "\n\n");
 		finalInvoice.append("Tax rate: " + taxRate + "%\n\n");
-		finalInvoice.append("Tax amount: $" + (orderSubtotal * (taxRate * 0.01) + "\n\n"));
+		finalInvoice.append("Tax amount: $" + String.format("%.2f", (orderSubtotal * (taxRate * 0.01))) + "\n\n");
+		finalInvoice.append("ORDER TOTAL: $" + String.format("%.2f", (orderSubtotal + (orderSubtotal * (taxRate * 0.01)))) + "\n\n");
+		finalInvoice.append("Thanks for shopping at NILE DOT COM!");
 		
 		return finalInvoice.toString();
 		
+	}
+	
+	public void newOrder() {
+		initialize();
 	}
 	
 	private class SwingAction extends AbstractAction {
@@ -232,7 +238,7 @@ public class GUI {
 			quantity = textField_1.getText();
 			GUI inventorySearch = new GUI();
 			try {
-				itemHolder = inventorySearch.searchInventory("src/main/inventory.txt", itemID);
+				itemHolder = inventorySearch.searchInventory("inventory.txt", itemID);
 				if(itemHolder == null) {
 					JOptionPane.showMessageDialog(null, "Item ID " + itemID + " not in file");
 					textField.setText("");
@@ -316,6 +322,7 @@ public class GUI {
 			putValue(NAME, "New Order");
 		}
 		public void actionPerformed(ActionEvent e) {
+			initialize();
 		}
 	}
 	private class SwingAction_5 extends AbstractAction {
