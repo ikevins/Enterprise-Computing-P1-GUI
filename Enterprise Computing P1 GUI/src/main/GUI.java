@@ -9,6 +9,8 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
 import java.awt.Font;
 import javax.swing.SwingConstants;
 import javax.swing.JTextField;
@@ -21,7 +23,13 @@ import javax.swing.ImageIcon;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Scanner;
+import javax.swing.JTextPane;
+import javax.swing.JFormattedTextField;
+import javax.swing.JPanel;
 
 public class GUI {
 
@@ -36,12 +44,28 @@ public class GUI {
 	private JButton btnNewButton_3;
 	private JButton btnNewButton_4;
 	private JButton btnNewButton_5;
+	private JLabel lblNewLabel;
+	private JLabel lblEnterQuantityFor;
+	private JLabel lblDetailsForItem;
+	private JLabel lblOrderSubtotalFor;
 	private final Action action = new SwingAction();
 	private final Action action_1 = new SwingAction_1();
 	private final Action action_2 = new SwingAction_2();
 	private final Action action_3 = new SwingAction_3();
 	private final Action action_4 = new SwingAction_4();
 	private final Action action_5 = new SwingAction_5();
+	private String itemID;
+	private String quantity;
+	private int discount = 0;
+	private int itemCounter = 1;	
+	private double orderSubtotal = 0;
+	private double taxRate = 6;
+	private String [] itemHolder = new String [4];
+	private String [] cart = new String [100];
+	StringBuilder currentCart = new StringBuilder();
+	StringBuilder finalInvoice = new StringBuilder();
+	DateFormat dateFormat = new SimpleDateFormat("dd/MM/yy, hh:mm:ss a z");
+	Date date = new Date();
 
 	/**
 	 * Launch the application.
@@ -114,25 +138,25 @@ public class GUI {
 		btnNewButton_5.setBounds(470, 250, 450, 30);
 		frame.getContentPane().add(btnNewButton_5);
 		
-		JLabel lblNewLabel = new JLabel("Enter item ID for item #1:");
+		lblNewLabel = new JLabel("Enter item ID for item #1:");
 		lblNewLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 		lblNewLabel.setFont(new Font("Calibri", Font.PLAIN, 14));
 		lblNewLabel.setBounds(10, 10, 450, 30);
 		frame.getContentPane().add(lblNewLabel);
 		
-		JLabel lblEnterQuantityFor = new JLabel("Enter quantity for item #1:");
+		lblEnterQuantityFor = new JLabel("Enter quantity for item #1:");
 		lblEnterQuantityFor.setHorizontalAlignment(SwingConstants.RIGHT);
 		lblEnterQuantityFor.setFont(new Font("Calibri", Font.PLAIN, 14));
 		lblEnterQuantityFor.setBounds(10, 50, 450, 30);
 		frame.getContentPane().add(lblEnterQuantityFor);
 		
-		JLabel lblDetailsForItem = new JLabel("Details for item #1:");
+		lblDetailsForItem = new JLabel("Details for item #1:");
 		lblDetailsForItem.setHorizontalAlignment(SwingConstants.RIGHT);
 		lblDetailsForItem.setFont(new Font("Calibri", Font.PLAIN, 14));
 		lblDetailsForItem.setBounds(10, 90, 450, 30);
 		frame.getContentPane().add(lblDetailsForItem);
 		
-		JLabel lblOrderSubtotalFor = new JLabel("Order subtotal for 0 item(s):");
+		lblOrderSubtotalFor = new JLabel("Order subtotal for 0 item(s):");
 		lblOrderSubtotalFor.setHorizontalAlignment(SwingConstants.RIGHT);
 		lblOrderSubtotalFor.setFont(new Font("Calibri", Font.PLAIN, 14));
 		lblOrderSubtotalFor.setBounds(10, 130, 450, 30);
@@ -164,25 +188,80 @@ public class GUI {
 		lblOutputLabel_1.setBounds(470, 130, 450, 30);
 		frame.getContentPane().add(lblOutputLabel_1);
 	}
+	
+	public String[] searchInventory(String fileName, String itemID) throws FileNotFoundException {
+		Scanner scan = new Scanner(new File(fileName));
+		String [] split = new String[4];
+        while(scan.hasNext()) {
+            String itemDetails = scan.nextLine().toString();
+            split = itemDetails.split(", ");
+            if(split[0].equals(itemID)){
+            	return split;
+            }
+        }
+        return null;
+	}
+	
+	public String viewOrder() {
+		for(int i = 1; i < itemCounter; i++) {
+			currentCart.append((cart[i] + "\n"));
+		}
+		return currentCart.toString();
+	}
+	
+	public String finishOrder() {
+		finalInvoice.append("Date: " + dateFormat.format(date) + "\n\n");
+		finalInvoice.append("Number of line items: " + (itemCounter - 1) + "\n\n");
+		finalInvoice.append("Item# / ID / Title / Price / Qty / Disc % / Subtotal:\n\n");
+		finalInvoice.append(viewOrder() + "\n");
+		finalInvoice.append("Order subtotal: " + orderSubtotal + "\n\n");
+		finalInvoice.append("Tax rate: " + taxRate + "%\n\n");
+		finalInvoice.append("Tax amount: $" + (orderSubtotal * (taxRate * 0.01) + "\n\n"));
+		
+		return finalInvoice.toString();
+		
+	}
+	
 	private class SwingAction extends AbstractAction {
 		public SwingAction() {
 			putValue(NAME, "Process Item #1");
 			//putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 		public void actionPerformed(ActionEvent e) {
-			String textFieldContents = textField.getText();
-			String textFieldContents_1 = textField_1.getText();
+			itemID = textField.getText();
+			quantity = textField_1.getText();
 			GUI inventorySearch = new GUI();
-			String item = null;
 			try {
-				item = inventorySearch.searchInventory("src/main/inventory.txt", textFieldContents, textFieldContents_1);
-				lblOutputLabel.setText(item);
-			} catch (FileNotFoundException | NumberFormatException e1) {
+				itemHolder = inventorySearch.searchInventory("src/main/inventory.txt", itemID);
+				if(itemHolder == null) {
+					JOptionPane.showMessageDialog(null, "Item ID " + itemID + " not in file");
+					textField.setText("");
+					textField_1.setText("");
+				}
+				if(Integer.parseInt(quantity) > 0 && Integer.parseInt(quantity) < 5) {
+					discount = 0;
+				}
+				else if(Integer.parseInt(quantity) > 4 && Integer.parseInt(quantity) < 10) {
+					discount = 10;
+				}
+				else if(Integer.parseInt(quantity) > 9 && Integer.parseInt(quantity) < 15) {
+					discount = 15;
+				}
+				else {
+					discount = 20;
+				}
+				lblDetailsForItem.setText("Details for item #" + itemCounter + ":");
+				lblOutputLabel.setText(itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3])));
+				btnNewButton_3.setEnabled(true);
+				btnNewButton_2.setEnabled(false);
+				
+				//File outputFile = new File("transactions.txt")
+				
+				
+			} catch (FileNotFoundException | NumberFormatException | NullPointerException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			btnNewButton_3.setEnabled(true);
-			btnNewButton_2.setEnabled(false);
 		}
 	}
 	private class SwingAction_1 extends AbstractAction {
@@ -191,28 +270,50 @@ public class GUI {
 			//putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 		public void actionPerformed(ActionEvent e) {
+		    JOptionPane.showMessageDialog(null, "Item #" + itemCounter + " accepted. Added to your cart.");
+		    cart[itemCounter] = (itemCounter + ". " + itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3])));  
+			itemCounter++;
+			// Update the label for the next item
+			lblNewLabel.setText("Enter item ID for item #" + itemCounter + ":");
+			lblEnterQuantityFor.setText("Enter quantity for item #" + itemCounter + ":");
+			lblOrderSubtotalFor.setText("Order subtotal for " + (itemCounter - 1) + " item(s):");
+			btnNewButton_2.setText("Process Item #" + itemCounter + ":");
+			btnNewButton_3.setText("Confirm Item #" + itemCounter + ":");
+			if(discount == 0) {
+				orderSubtotal += (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity));
+			}
+			else {
+				orderSubtotal += (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01)));
+			}
+			lblOutputLabel_1.setText("$" + String.format("%.2f", orderSubtotal));
+			textField.setText("");
+			textField_1.setText("");
+			btnNewButton_1.setEnabled(true);
+			btnNewButton_2.setEnabled(true);
+			btnNewButton_3.setEnabled(false);
+			btnNewButton_4.setEnabled(true);
 		}
 	}
 	private class SwingAction_2 extends AbstractAction {
 		public SwingAction_2() {
 			putValue(NAME, "View Order");
-			//putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 		public void actionPerformed(ActionEvent e) {
+			JOptionPane.showMessageDialog(null, viewOrder());
 		}
 	}
 	private class SwingAction_3 extends AbstractAction {
 		public SwingAction_3() {
 			putValue(NAME, "Finish Order");
-			//putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 		public void actionPerformed(ActionEvent e) {
+			JOptionPane.showMessageDialog(null, finishOrder());
+			System.exit(0);
 		}
 	}
 	private class SwingAction_4 extends AbstractAction {
 		public SwingAction_4() {
 			putValue(NAME, "New Order");
-			//putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 		public void actionPerformed(ActionEvent e) {
 		}
@@ -220,29 +321,9 @@ public class GUI {
 	private class SwingAction_5 extends AbstractAction {
 		public SwingAction_5() {
 			putValue(NAME, "Exit");
-			//putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 		public void actionPerformed(ActionEvent e) {
+			System.exit(0);
 		}
-	}
-	private String searchInventory(String fileName, String itemID, String quantity) throws FileNotFoundException {
-		Scanner scan = new Scanner(new File(fileName));
-        while(scan.hasNext()) {
-            String itemDetails = scan.nextLine().toString();
-            String [] split = itemDetails.split(", ");
-            int discount = 0;
-            if(split[0].equals(itemID)){
-            	if(discount == 0) {
-                    return split[0] + " " + split[1] + " $" + split[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + Double.parseDouble(split[3]);
-            	}
-            	else {
-                    return split[0] + " " + split[1] + " $" + split[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + discount * Double.parseDouble(split[3]);
-            	}
-            }
-            else {
-            	return "item not found!";
-            }
-        }
-        return null;
 	}
 }
