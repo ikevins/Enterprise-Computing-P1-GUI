@@ -32,7 +32,7 @@ import javax.swing.JFormattedTextField;
 import javax.swing.JPanel;
 
 public class GUI {
-
+//test
 	private JFrame frame;
 	private JTextField textField;
 	private JTextField textField_1;
