@@ -1,3 +1,9 @@
+/* Name: Kevin Singh
+   Course: CNT 4714 – Fall 2022 
+   Assignment title: Project 1 – Event-driven Enterprise Simulation 
+   Date: Sunday September 11, 2022 
+*/ 
+
 package main;
 import java.awt.EventQueue;
 
@@ -21,8 +27,17 @@ import java.awt.event.ActionEvent;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -62,10 +77,13 @@ public class GUI {
 	private double taxRate = 6;
 	private String [] itemHolder = new String [4];
 	private String [] cart = new String [100];
+	private String [] finalCart = new String [100];
 	StringBuilder finalInvoice = new StringBuilder();
 	DateFormat dateFormat = new SimpleDateFormat("dd/MM/yy, hh:mm:ss a z");
+	DateFormat orderNumber = new SimpleDateFormat("ddMMyyyyHHmm");
 	Date date = new Date();
-
+	PrintWriter transactions;
+	
 	/**
 	 * Launch the application.
 	 */
@@ -219,9 +237,31 @@ public class GUI {
 		finalInvoice.append("Tax amount: $" + String.format("%.2f", (orderSubtotal * (taxRate * 0.01))) + "\n\n");
 		finalInvoice.append("ORDER TOTAL: $" + String.format("%.2f", (orderSubtotal + (orderSubtotal * (taxRate * 0.01)))) + "\n\n");
 		finalInvoice.append("Thanks for shopping at NILE DOT COM!");
-		
+		try {
+			File checkExistence = new File("/Users/singh/transactions.txt");
+			if(checkExistence.isFile() == false) {
+				transactions = new PrintWriter("/Users/singh/transactions.txt");
+				createInvoiceDocument();
+			}
+			else {
+				transactions = new PrintWriter(new FileOutputStream(new File("/Users/singh/transactions.txt"), true));
+				//transactions.append("\n");
+				createInvoiceDocument();
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return finalInvoice.toString();
-		
+	}
+	
+	public void createInvoiceDocument() {
+		for(int i = 1; i < itemCounter; i++) {
+			transactions.append(orderNumber.format(date));
+			transactions.append((finalCart[i]) + "\n");
+		}
+		transactions.flush();
+		transactions.close();
 	}
 	
 	public void newOrder() {
@@ -260,10 +300,6 @@ public class GUI {
 				lblOutputLabel.setText(itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3])));
 				btnNewButton_3.setEnabled(true);
 				btnNewButton_2.setEnabled(false);
-				
-				//File outputFile = new File("transactions.txt")
-				
-				
 			} catch (FileNotFoundException | NumberFormatException | NullPointerException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -278,6 +314,12 @@ public class GUI {
 		public void actionPerformed(ActionEvent e) {
 		    JOptionPane.showMessageDialog(null, "Item #" + itemCounter + " accepted. Added to your cart.");
 		    cart[itemCounter] = (itemCounter + ". " + itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3])));  
+		    if(discount == 0) {
+		    	finalCart[itemCounter] = (", " + itemHolder[0] + ", " + itemHolder[1] + ", " + itemHolder[3] + ", " + quantity + ", " + (discount * 0.01) + ", " + (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity)) + ", " + dateFormat.format(date));
+		    }
+		    else {
+		    	finalCart[itemCounter] = (", " + itemHolder[0] + ", " + itemHolder[1] + ", " + itemHolder[3] + ", " + quantity + ", " + (discount * 0.01) + ", $" + String.format("%.2f", (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01)))) + ", " + dateFormat.format(date));
+		    }
 			itemCounter++;
 			// Update the label for the next item
 			lblNewLabel.setText("Enter item ID for item #" + itemCounter + ":");
@@ -322,7 +364,7 @@ public class GUI {
 			putValue(NAME, "New Order");
 		}
 		public void actionPerformed(ActionEvent e) {
-			initialize();
+			
 		}
 	}
 	private class SwingAction_5 extends AbstractAction {
