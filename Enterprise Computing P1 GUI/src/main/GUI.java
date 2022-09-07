@@ -40,6 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Scanner;
 import javax.swing.JTextPane;
@@ -112,6 +113,7 @@ public class GUI {
 	 */
 	private void initialize() {
 		frame = new JFrame();
+		frame.setTitle("Nile Dot Com - Fall 2022");
 		frame.setBounds(100, 100, 950, 330);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
@@ -232,11 +234,11 @@ public class GUI {
 		finalInvoice.append("Number of line items: " + (itemCounter - 1) + "\n\n");
 		finalInvoice.append("Item# / ID / Title / Price / Qty / Disc % / Subtotal:\n\n");
 		finalInvoice.append(viewOrder() + "\n");
-		finalInvoice.append("Order subtotal: $" + orderSubtotal + "\n\n");
+		finalInvoice.append("Order subtotal: $" + (String.format("%.2f", orderSubtotal)) + "\n\n");
 		finalInvoice.append("Tax rate: " + taxRate + "%\n\n");
 		finalInvoice.append("Tax amount: $" + String.format("%.2f", (orderSubtotal * (taxRate * 0.01))) + "\n\n");
 		finalInvoice.append("ORDER TOTAL: $" + String.format("%.2f", (orderSubtotal + (orderSubtotal * (taxRate * 0.01)))) + "\n\n");
-		finalInvoice.append("Thanks for shopping at NILE DOT COM!");
+		finalInvoice.append("Thanks for shopping at Nile Dot Com");
 		try {
 			File checkExistence = new File("/Users/singh/transactions.txt");
 			if(checkExistence.isFile() == false) {
@@ -265,7 +267,30 @@ public class GUI {
 	}
 	
 	public void newOrder() {
-		initialize();
+		// Reinitialize variables and arrays
+		Arrays.fill(itemHolder, null);
+		Arrays.fill(cart, null);
+		Arrays.fill(finalCart, null);
+		orderSubtotal = 0;
+		itemCounter = 1;
+		
+		// Reset text fields
+		textField.setText("");
+		textField_1.setText("");
+		lblOutputLabel.setText("");		
+		lblOutputLabel_1.setText("");
+		lblNewLabel.setText("Enter item ID for item #1:");
+		lblEnterQuantityFor.setText("Enter quantity for item #1:");
+		lblDetailsForItem.setText("Details for item #1:");
+		lblOrderSubtotalFor.setText("Order subtotal for 0 item(s):");
+		btnNewButton_2.setText("Process Item #1:");
+		btnNewButton_3.setText("Confirm Item #1:");
+		
+		// Button enables
+		btnNewButton_1.setEnabled(false);
+		btnNewButton_2.setEnabled(true);
+		btnNewButton_3.setEnabled(false);
+		btnNewButton_4.setEnabled(false);
 	}
 	
 	private class SwingAction extends AbstractAction {
@@ -280,11 +305,14 @@ public class GUI {
 			try {
 				itemHolder = inventorySearch.searchInventory("inventory.txt", itemID);
 				if(itemHolder == null) {
-					JOptionPane.showMessageDialog(null, "Item ID " + itemID + " not in file");
+					JOptionPane.showMessageDialog(null, "Item ID " + itemID + " not in file", "Nile Dot Com - ERROR", JOptionPane.ERROR_MESSAGE);
 					textField.setText("");
 					textField_1.setText("");
 				}
-				if(Integer.parseInt(quantity) > 0 && Integer.parseInt(quantity) < 5) {
+				if(quantity.length() == 0 || Integer.parseInt(quantity) <= 0) {
+					JOptionPane.showMessageDialog(null, "A valid quantity is required", "Nile Dot Com - ERROR", JOptionPane.ERROR_MESSAGE);
+				}
+				else if(Integer.parseInt(quantity) > 0 && Integer.parseInt(quantity) < 5) {
 					discount = 0;
 				}
 				else if(Integer.parseInt(quantity) > 4 && Integer.parseInt(quantity) < 10) {
@@ -296,10 +324,15 @@ public class GUI {
 				else {
 					discount = 20;
 				}
-				lblDetailsForItem.setText("Details for item #" + itemCounter + ":");
-				lblOutputLabel.setText(itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3])));
-				btnNewButton_3.setEnabled(true);
-				btnNewButton_2.setEnabled(false);
+				if(itemHolder[2].equals("true")) {
+					lblOutputLabel.setText(itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity)));
+					lblDetailsForItem.setText("Details for item #" + itemCounter + ":");
+					btnNewButton_3.setEnabled(true);
+					btnNewButton_2.setEnabled(false);
+				}
+				else if(itemHolder[2].equals("false")){
+					JOptionPane.showMessageDialog(null, "Item ID " + itemID + " not in file", "Nile Dot Com - ERROR", JOptionPane.ERROR_MESSAGE);
+				}
 			} catch (FileNotFoundException | NumberFormatException | NullPointerException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -312,8 +345,8 @@ public class GUI {
 			//putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 		public void actionPerformed(ActionEvent e) {
-		    JOptionPane.showMessageDialog(null, "Item #" + itemCounter + " accepted. Added to your cart.");
-		    cart[itemCounter] = (itemCounter + ". " + itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3])));  
+		    JOptionPane.showMessageDialog(null, "Item #" + itemCounter + " accepted. Added to your cart.", "Nile Dot Com - Item Confirmed", JOptionPane.INFORMATION_MESSAGE);
+		    cart[itemCounter] = (itemCounter + ". " + itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01))));  
 		    if(discount == 0) {
 		    	finalCart[itemCounter] = (", " + itemHolder[0] + ", " + itemHolder[1] + ", " + itemHolder[3] + ", " + quantity + ", " + (discount * 0.01) + ", " + (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity)) + ", " + dateFormat.format(date));
 		    }
@@ -347,7 +380,7 @@ public class GUI {
 			putValue(NAME, "View Order");
 		}
 		public void actionPerformed(ActionEvent e) {
-			JOptionPane.showMessageDialog(null, viewOrder());
+			JOptionPane.showMessageDialog(null, viewOrder(), "Nile Dot Com - Current Shopping Cart Status", JOptionPane.INFORMATION_MESSAGE);
 		}
 	}
 	private class SwingAction_3 extends AbstractAction {
@@ -355,7 +388,7 @@ public class GUI {
 			putValue(NAME, "Finish Order");
 		}
 		public void actionPerformed(ActionEvent e) {
-			JOptionPane.showMessageDialog(null, finishOrder());
+			JOptionPane.showMessageDialog(null, finishOrder(), "Nile Dot Com - FINAL INVOICE", JOptionPane.INFORMATION_MESSAGE);
 			System.exit(0);
 		}
 	}
@@ -364,7 +397,7 @@ public class GUI {
 			putValue(NAME, "New Order");
 		}
 		public void actionPerformed(ActionEvent e) {
-			
+			newOrder();
 		}
 	}
 	private class SwingAction_5 extends AbstractAction {
