@@ -8,11 +8,6 @@ package main;
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
-import java.awt.FlowLayout;
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -21,31 +16,18 @@ import java.awt.Font;
 import javax.swing.SwingConstants;
 import javax.swing.JTextField;
 import java.awt.Color;
-import java.awt.Toolkit;
 import javax.swing.AbstractAction;
 import java.awt.event.ActionEvent;
 import javax.swing.Action;
-import javax.swing.ImageIcon;
-
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Scanner;
-import javax.swing.JTextPane;
-import javax.swing.JFormattedTextField;
-import javax.swing.JPanel;
 
 public class GUI {
 
@@ -325,13 +307,19 @@ public class GUI {
 					discount = 20;
 				}
 				if(itemHolder[2].equals("true")) {
-					lblOutputLabel.setText(itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity)));
+					if(discount == 0) {
+						lblOutputLabel.setText(itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity)));
+					}
+					else {
+						lblOutputLabel.setText(itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1-(discount * 0.01))));
+
+					}
 					lblDetailsForItem.setText("Details for item #" + itemCounter + ":");
 					btnNewButton_3.setEnabled(true);
 					btnNewButton_2.setEnabled(false);
 				}
 				else if(itemHolder[2].equals("false")){
-					JOptionPane.showMessageDialog(null, "Item ID " + itemID + " not in file", "Nile Dot Com - ERROR", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, "Item ID " + itemID + " not in stock", "Nile Dot Com - ERROR", JOptionPane.ERROR_MESSAGE);
 				}
 			} catch (FileNotFoundException | NumberFormatException | NullPointerException e1) {
 				// TODO Auto-generated catch block
@@ -348,7 +336,7 @@ public class GUI {
 		    JOptionPane.showMessageDialog(null, "Item #" + itemCounter + " accepted. Added to your cart.", "Nile Dot Com - Item Confirmed", JOptionPane.INFORMATION_MESSAGE);
 		    cart[itemCounter] = (itemCounter + ". " + itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01))));  
 		    if(discount == 0) {
-		    	finalCart[itemCounter] = (", " + itemHolder[0] + ", " + itemHolder[1] + ", " + itemHolder[3] + ", " + quantity + ", " + (discount * 0.01) + ", " + (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity)) + ", " + dateFormat.format(date));
+		    	finalCart[itemCounter] = (", " + itemHolder[0] + ", " + itemHolder[1] + ", " + itemHolder[3] + ", " + quantity + ", " + (discount * 0.01) + ", $" + String.format("%.2f", (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity)) + ", " + dateFormat.format(date)));
 		    }
 		    else {
 		    	finalCart[itemCounter] = (", " + itemHolder[0] + ", " + itemHolder[1] + ", " + itemHolder[3] + ", " + quantity + ", " + (discount * 0.01) + ", $" + String.format("%.2f", (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01)))) + ", " + dateFormat.format(date));
