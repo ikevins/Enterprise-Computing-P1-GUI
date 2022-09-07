@@ -61,11 +61,11 @@ public class GUI {
 	private String [] itemHolder = new String [4];
 	private String [] cart = new String [100];
 	private String [] finalCart = new String [100];
-	StringBuilder finalInvoice = new StringBuilder();
-	DateFormat dateFormat = new SimpleDateFormat("dd/MM/yy, hh:mm:ss a z");
-	DateFormat orderNumber = new SimpleDateFormat("ddMMyyyyHHmm");
-	Date date = new Date();
-	PrintWriter transactions;
+	private StringBuilder finalInvoice = new StringBuilder();
+	private DateFormat dateFormat = new SimpleDateFormat("dd/MM/yy, hh:mm:ss a z");
+	private DateFormat orderNumber = new SimpleDateFormat("ddMMyyyyHHmm");
+	private Date date = new Date();
+	private PrintWriter transactions;
 	
 	/**
 	 * Launch the application.
@@ -336,7 +336,7 @@ public class GUI {
 		    JOptionPane.showMessageDialog(null, "Item #" + itemCounter + " accepted. Added to your cart.", "Nile Dot Com - Item Confirmed", JOptionPane.INFORMATION_MESSAGE);
 		    cart[itemCounter] = (itemCounter + ". " + itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01))));  
 		    if(discount == 0) {
-		    	finalCart[itemCounter] = (", " + itemHolder[0] + ", " + itemHolder[1] + ", " + itemHolder[3] + ", " + quantity + ", " + (discount * 0.01) + ", $" + String.format("%.2f", (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity)) + ", " + dateFormat.format(date)));
+		    	finalCart[itemCounter] = (", " + itemHolder[0] + ", " + itemHolder[1] + ", " + itemHolder[3] + ", " + quantity + ", " + (discount * 0.01) + ", $" + String.format("%.2f", (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity))) + ", " + dateFormat.format(date));
 		    }
 		    else {
 		    	finalCart[itemCounter] = (", " + itemHolder[0] + ", " + itemHolder[1] + ", " + itemHolder[3] + ", " + quantity + ", " + (discount * 0.01) + ", $" + String.format("%.2f", (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01)))) + ", " + dateFormat.format(date));
