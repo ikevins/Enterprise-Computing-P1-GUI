@@ -19,6 +19,7 @@ import java.awt.Color;
 import javax.swing.AbstractAction;
 import java.awt.event.ActionEvent;
 import javax.swing.Action;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -54,13 +55,14 @@ public class GUI {
 	private final Action action_5 = new SwingAction_5();
 	private String itemID;
 	private String quantity;
+	private String [] itemHolder = new String [4];
+	private String [] cart = new String [100];
+	private String [] finalCart = new String [100];
 	private int discount = 0;
 	private int itemCounter = 1;	
 	private double orderSubtotal = 0;
 	private double taxRate = 6;
-	private String [] itemHolder = new String [4];
-	private String [] cart = new String [100];
-	private String [] finalCart = new String [100];
+	private StringBuilder currentCart = new StringBuilder();
 	private StringBuilder finalInvoice = new StringBuilder();
 	private DateFormat dateFormat = new SimpleDateFormat("dd/MM/yy, hh:mm:ss a z");
 	private DateFormat orderNumber = new SimpleDateFormat("ddMMyyyyHHmm");
@@ -190,62 +192,137 @@ public class GUI {
 		frame.getContentPane().add(lblOutputLabel_1);
 	}
 	
-	public String[] searchInventory(String fileName, String itemID) throws FileNotFoundException {
-		Scanner scan = new Scanner(new File(fileName));
-		String [] split = new String[4];
-        while(scan.hasNext()) {
-            String itemDetails = scan.nextLine().toString();
-            split = itemDetails.split(", ");
-            if(split[0].equals(itemID)){
-            	return split;
-            }
-        }
-        return null;
-	}
-	
-	public String viewOrder() {
-		StringBuilder currentCart = new StringBuilder();
-		for(int i = 1; i < itemCounter; i++) {
-			currentCart.append((cart[i] + "\n"));
+	public void processItem() {
+		itemID = textField.getText();
+		quantity = textField_1.getText();
+		try {
+			
+			// Temp string array to hold item values
+			itemHolder = searchInventory("inventory.txt", itemID);
+			if(itemHolder == null) {
+				JOptionPane.showMessageDialog(null, "Item ID " + itemID + " not in file", "Nile Dot Com - ERROR", JOptionPane.ERROR_MESSAGE);
+				textField.setText("");
+				textField_1.setText("");
+			}
+			// check if a valid quantity was entered
+			if(quantity.length() == 0 || Integer.parseInt(quantity) <= 0) {
+				JOptionPane.showMessageDialog(null, "A valid quantity is required", "Nile Dot Com - ERROR", JOptionPane.ERROR_MESSAGE);
+			}
+			// if valid quantity was entered, calculate the discount
+			else if(Integer.parseInt(quantity) > 0 && Integer.parseInt(quantity) < 5) {
+				discount = 0;
+			}
+			else if(Integer.parseInt(quantity) > 4 && Integer.parseInt(quantity) < 10) {
+				discount = 10;
+			}
+			else if(Integer.parseInt(quantity) > 9 && Integer.parseInt(quantity) < 15) {
+				discount = 15;
+			}
+			else {
+				discount = 20;
+			}
+			// check if the item is in stock
+			if(itemHolder[2].equals("true")) {
+				if(discount == 0) {
+					lblOutputLabel.setText(itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity)));
+				}
+				else {
+					lblOutputLabel.setText(itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01))));
+
+				}
+				lblDetailsForItem.setText("Details for item #" + itemCounter + ":");
+				btnNewButton_3.setEnabled(true);
+				btnNewButton_2.setEnabled(false);
+			}
+			else if(itemHolder[2].equals("false")){
+				JOptionPane.showMessageDialog(null, "Item ID " + itemID + " not in stock", "Nile Dot Com - ERROR", JOptionPane.ERROR_MESSAGE);
+			}
+		} catch (FileNotFoundException | NumberFormatException | NullPointerException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
-		return currentCart.toString();
 	}
 	
-	public String finishOrder() {
+	public void confirmItem() {
+	    JOptionPane.showMessageDialog(null, "Item #" + itemCounter + " accepted. Added to your cart.", "Nile Dot Com - Item Confirmed", JOptionPane.INFORMATION_MESSAGE);
+	    
+	    // append item to viewOrder stringbuilder
+	    currentCart.append(itemCounter + ". " + itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01))) + "\n");
+	   
+	    if(discount == 0) {
+	    	finalCart[itemCounter] = (", " + itemHolder[0] + ", " + itemHolder[1] + ", " + itemHolder[3] + ", " + quantity + ", " + (discount * 0.01) + ", " + (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity)) + ", " + dateFormat.format(date));
+	    }
+	    else {
+	    	finalCart[itemCounter] = (", " + itemHolder[0] + ", " + itemHolder[1] + ", " + itemHolder[3] + ", " + quantity + ", " + (discount * 0.01) + ", $" + String.format("%.2f", (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01)))) + ", " + dateFormat.format(date));
+	    }
+		// Calculate the subtotal accounting for a potential discount
+		if(discount == 0) {
+			orderSubtotal += (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity));
+		}
+		else {
+			orderSubtotal += (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01)));
+		}
+		
+		// Update the labels for the next item
+		itemCounter++;
+		lblNewLabel.setText("Enter item ID for item #" + itemCounter + ":");
+		lblEnterQuantityFor.setText("Enter quantity for item #" + itemCounter + ":");
+		lblOrderSubtotalFor.setText("Order subtotal for " + (itemCounter - 1) + " item(s):");
+		btnNewButton_2.setText("Process Item #" + itemCounter + ":");
+		btnNewButton_3.setText("Confirm Item #" + itemCounter + ":");
+		lblOutputLabel_1.setText("$" + String.format("%.2f", orderSubtotal));
+		textField.setText("");
+		textField_1.setText("");
+		btnNewButton_1.setEnabled(true);
+		btnNewButton_2.setEnabled(true);
+		btnNewButton_3.setEnabled(false);
+		btnNewButton_4.setEnabled(true);
+	}
+	
+	public void viewOrder() {
+		JOptionPane.showMessageDialog(null, currentCart.toString(), "Nile Dot Com - Current Shopping Cart Status", JOptionPane.INFORMATION_MESSAGE);
+	}
+	
+	public void finishOrder() {
+		// append final invoice details
 		finalInvoice.append("Date: " + dateFormat.format(date) + "\n\n");
 		finalInvoice.append("Number of line items: " + (itemCounter - 1) + "\n\n");
 		finalInvoice.append("Item# / ID / Title / Price / Qty / Disc % / Subtotal:\n\n");
-		finalInvoice.append(viewOrder() + "\n");
+		finalInvoice.append(currentCart.toString() + "\n");
 		finalInvoice.append("Order subtotal: $" + (String.format("%.2f", orderSubtotal)) + "\n\n");
 		finalInvoice.append("Tax rate: " + taxRate + "%\n\n");
 		finalInvoice.append("Tax amount: $" + String.format("%.2f", (orderSubtotal * (taxRate * 0.01))) + "\n\n");
 		finalInvoice.append("ORDER TOTAL: $" + String.format("%.2f", (orderSubtotal + (orderSubtotal * (taxRate * 0.01)))) + "\n\n");
 		finalInvoice.append("Thanks for shopping at Nile Dot Com");
+		
+		// close GUI fields
+		btnNewButton_1.setEnabled(false);
+		btnNewButton_2.setEnabled(false);
+		btnNewButton_4.setEnabled(false);
+		textField.setEnabled(false);
+		textField_1.setEnabled(false);
+		
+		// final invoice popup
+		JOptionPane.showMessageDialog(null, finalInvoice.toString(), "Nile Dot Com - FINAL INVOICE", JOptionPane.INFORMATION_MESSAGE);
+		
+		// if the txt file exists already, begin appending, else, create the txt file and then begin appending
 		try {
-			File checkExistence = new File("/Users/singh/transactions.txt");
+			File checkExistence = new File("transactions.txt");
 			if(checkExistence.isFile() == false) {
-				transactions = new PrintWriter("/Users/singh/transactions.txt");
-				createInvoiceDocument();
+				transactions = new PrintWriter("transactions.txt");
 			}
 			else {
-				transactions = new PrintWriter(new FileOutputStream(new File("/Users/singh/transactions.txt"), true));
-				//transactions.append("\n");
-				createInvoiceDocument();
+				transactions = new PrintWriter(new FileOutputStream(new File("transactions.txt"), true));
 			}
+			for(int i = 1; i < itemCounter; i++) {
+				transactions.append(orderNumber.format(date));
+				transactions.append((finalCart[i]) + "\n");
+			}
+			transactions.close();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return finalInvoice.toString();
-	}
-	
-	public void createInvoiceDocument() {
-		for(int i = 1; i < itemCounter; i++) {
-			transactions.append(orderNumber.format(date));
-			transactions.append((finalCart[i]) + "\n");
-		}
-		transactions.flush();
-		transactions.close();
 	}
 	
 	public void newOrder() {
@@ -253,6 +330,8 @@ public class GUI {
 		Arrays.fill(itemHolder, null);
 		Arrays.fill(cart, null);
 		Arrays.fill(finalCart, null);
+		currentCart.setLength(0);
+		finalInvoice.setLength(0);
 		orderSubtotal = 0;
 		itemCounter = 1;
 		
@@ -273,94 +352,46 @@ public class GUI {
 		btnNewButton_2.setEnabled(true);
 		btnNewButton_3.setEnabled(false);
 		btnNewButton_4.setEnabled(false);
+		
+		// Field enables
+		textField.setEnabled(true);
+		textField_1.setEnabled(true);
+		
+		// reset the time for a new transaction ID
+		date = new Date();
+	}
+	
+	public void exit() {
+		System.exit(0);
+	}
+	
+	public String[] searchInventory(String fileName, String itemID) throws FileNotFoundException {
+		Scanner scan = new Scanner(new File(fileName));
+		String [] split = new String[4];
+        while(scan.hasNext()) {
+            String itemDetails = scan.nextLine().toString();
+            split = itemDetails.split(", ");
+            if(split[0].equals(itemID)){
+            	return split;
+            }
+        }
+        return null;
 	}
 	
 	private class SwingAction extends AbstractAction {
 		public SwingAction() {
 			putValue(NAME, "Process Item #1");
-			//putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 		public void actionPerformed(ActionEvent e) {
-			itemID = textField.getText();
-			quantity = textField_1.getText();
-			GUI inventorySearch = new GUI();
-			try {
-				itemHolder = inventorySearch.searchInventory("inventory.txt", itemID);
-				if(itemHolder == null) {
-					JOptionPane.showMessageDialog(null, "Item ID " + itemID + " not in file", "Nile Dot Com - ERROR", JOptionPane.ERROR_MESSAGE);
-					textField.setText("");
-					textField_1.setText("");
-				}
-				if(quantity.length() == 0 || Integer.parseInt(quantity) <= 0) {
-					JOptionPane.showMessageDialog(null, "A valid quantity is required", "Nile Dot Com - ERROR", JOptionPane.ERROR_MESSAGE);
-				}
-				else if(Integer.parseInt(quantity) > 0 && Integer.parseInt(quantity) < 5) {
-					discount = 0;
-				}
-				else if(Integer.parseInt(quantity) > 4 && Integer.parseInt(quantity) < 10) {
-					discount = 10;
-				}
-				else if(Integer.parseInt(quantity) > 9 && Integer.parseInt(quantity) < 15) {
-					discount = 15;
-				}
-				else {
-					discount = 20;
-				}
-				if(itemHolder[2].equals("true")) {
-					if(discount == 0) {
-						lblOutputLabel.setText(itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity)));
-					}
-					else {
-						lblOutputLabel.setText(itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1-(discount * 0.01))));
-
-					}
-					lblDetailsForItem.setText("Details for item #" + itemCounter + ":");
-					btnNewButton_3.setEnabled(true);
-					btnNewButton_2.setEnabled(false);
-				}
-				else if(itemHolder[2].equals("false")){
-					JOptionPane.showMessageDialog(null, "Item ID " + itemID + " not in stock", "Nile Dot Com - ERROR", JOptionPane.ERROR_MESSAGE);
-				}
-			} catch (FileNotFoundException | NumberFormatException | NullPointerException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
+			processItem();
 		}
 	}
 	private class SwingAction_1 extends AbstractAction {
 		public SwingAction_1() {
 			putValue(NAME, "Confirm Item #1");
-			//putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 		public void actionPerformed(ActionEvent e) {
-		    JOptionPane.showMessageDialog(null, "Item #" + itemCounter + " accepted. Added to your cart.", "Nile Dot Com - Item Confirmed", JOptionPane.INFORMATION_MESSAGE);
-		    cart[itemCounter] = (itemCounter + ". " + itemHolder[0] + " " + itemHolder[1] + " $" + itemHolder[3] + " " + Integer.parseInt(quantity) + " " + discount + "% " + "$" + String.format("%.2f", Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01))));  
-		    if(discount == 0) {
-		    	finalCart[itemCounter] = (", " + itemHolder[0] + ", " + itemHolder[1] + ", " + itemHolder[3] + ", " + quantity + ", " + (discount * 0.01) + ", $" + String.format("%.2f", (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity))) + ", " + dateFormat.format(date));
-		    }
-		    else {
-		    	finalCart[itemCounter] = (", " + itemHolder[0] + ", " + itemHolder[1] + ", " + itemHolder[3] + ", " + quantity + ", " + (discount * 0.01) + ", $" + String.format("%.2f", (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01)))) + ", " + dateFormat.format(date));
-		    }
-			itemCounter++;
-			// Update the label for the next item
-			lblNewLabel.setText("Enter item ID for item #" + itemCounter + ":");
-			lblEnterQuantityFor.setText("Enter quantity for item #" + itemCounter + ":");
-			lblOrderSubtotalFor.setText("Order subtotal for " + (itemCounter - 1) + " item(s):");
-			btnNewButton_2.setText("Process Item #" + itemCounter + ":");
-			btnNewButton_3.setText("Confirm Item #" + itemCounter + ":");
-			if(discount == 0) {
-				orderSubtotal += (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity));
-			}
-			else {
-				orderSubtotal += (Double.parseDouble(itemHolder[3]) * Integer.parseInt(quantity) * (1 - (discount * 0.01)));
-			}
-			lblOutputLabel_1.setText("$" + String.format("%.2f", orderSubtotal));
-			textField.setText("");
-			textField_1.setText("");
-			btnNewButton_1.setEnabled(true);
-			btnNewButton_2.setEnabled(true);
-			btnNewButton_3.setEnabled(false);
-			btnNewButton_4.setEnabled(true);
+			confirmItem();
 		}
 	}
 	private class SwingAction_2 extends AbstractAction {
@@ -368,7 +399,7 @@ public class GUI {
 			putValue(NAME, "View Order");
 		}
 		public void actionPerformed(ActionEvent e) {
-			JOptionPane.showMessageDialog(null, viewOrder(), "Nile Dot Com - Current Shopping Cart Status", JOptionPane.INFORMATION_MESSAGE);
+			viewOrder();
 		}
 	}
 	private class SwingAction_3 extends AbstractAction {
@@ -376,8 +407,7 @@ public class GUI {
 			putValue(NAME, "Finish Order");
 		}
 		public void actionPerformed(ActionEvent e) {
-			JOptionPane.showMessageDialog(null, finishOrder(), "Nile Dot Com - FINAL INVOICE", JOptionPane.INFORMATION_MESSAGE);
-			System.exit(0);
+			finishOrder();
 		}
 	}
 	private class SwingAction_4 extends AbstractAction {
@@ -393,7 +423,7 @@ public class GUI {
 			putValue(NAME, "Exit");
 		}
 		public void actionPerformed(ActionEvent e) {
-			System.exit(0);
+			exit();
 		}
 	}
 }
